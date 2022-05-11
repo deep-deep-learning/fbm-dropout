@@ -8,7 +8,7 @@ from matplotlib.patches import Rectangle
 
 class DropoutFBM_with_branching(nn.Module):
 
-    def __init__(self, hurst: float, n_agents: int, max_iter: int, grid_size: tuple, is_conv=False, show=False, device=None, dtype=None):
+    def __init__(self, hurst: float, n_agents: int, agent_len: int, max_iter: int, scale: float, grid_size: tuple, is_conv=False, show=False, device=None, dtype=None):
 
         super().__init__()
         
@@ -44,19 +44,19 @@ class DropoutFBM_with_branching(nn.Module):
         self.cum_dropout_rate = 0.0
 
         # the sampling rate
-        self.agent_len = 500
         # sliding window length
-        self.sliding_window_len = 500
+        self.sequence_len = max_iter / scale
+        self.agent_len = self.sliding_window_len = agent_len
 
         # initialize (x, y) of FBM dropout agents for max iterations and their color
         for _ in range(n_agents):
             # random starting point (x, y)
             x_starting_pt, y_starting_pt = torch.rand((1,)).item(), torch.rand((1,)).item()
             # get x FBM sequence with periodic boundary at [0, 1]
-            fbm_x = FractionalBrownianMotion(hurst, t=max_iter)
+            fbm_x = FractionalBrownianMotion(hurst, t=self.sequence_len)
             self.agents_x.append((fbm_x.sample(max_iter * self.agent_len) + x_starting_pt) % 1)
             # get y FBM sequence with periodic boundary at [0, 1]
-            fbm_y = FractionalBrownianMotion(hurst, t=max_iter)
+            fbm_y = FractionalBrownianMotion(hurst, t=self.sequence_len)
             self.agents_y.append((fbm_y.sample(max_iter * self.agent_len) + y_starting_pt) % 1)
             # get random (r, g, b) color
             color = torch.rand((3,))
@@ -82,9 +82,9 @@ class DropoutFBM_with_branching(nn.Module):
         # update dropout rates
         self.update_dropout_rate()
 
-        # return input * mask * scale
-        return torch.mul(input, self.mask) * (1 / (1 - 1 / self.now_dropout_rate))
-
+        # return input * mask * scale        
+        return torch.mul(input, self.mask) * (1 / (1 - self.now_dropout_rate))
+            
     def update_dropout_rate(self):
         self.now_dropout_rate = self.get_dropout_rate()
         self.sum_dropout_rate += self.now_dropout_rate
@@ -103,9 +103,9 @@ class DropoutFBM_with_branching(nn.Module):
             x_starting_pt, y_starting_pt = self.agents_x[i][random_index], self.agents_y[i][random_index]
             
             # sample more starting from the starting point
-            fbm_x = FractionalBrownianMotion(self.hurst, t=self.max_iter)
+            fbm_x = FractionalBrownianMotion(self.hurst, t=self.sequence_len)
             agents_x.append((fbm_x.sample(self.max_iter * self.agent_len) + x_starting_pt) % 1)
-            fbm_y = FractionalBrownianMotion(self.hurst, t=self.max_iter)
+            fbm_y = FractionalBrownianMotion(self.hurst, t=self.sequence_len)
             agents_y.append((fbm_y.sample(self.max_iter * self.agent_len) + y_starting_pt) % 1)
 
         # update the sequences and current iter
@@ -502,7 +502,7 @@ class DropoutFBM_2(nn.Module):
 
         self.n_neurons = grid_size[0] * grid_size[1]
 
-        self.agent_len = 1000
+        self.agent_len = 100
 
         # initialize (x, y) of FBM dropout agents for max iterations
         for _ in range(n_agents):
