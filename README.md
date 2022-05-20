@@ -2,14 +2,17 @@
 
 ## Setup 
 
-Install the PyTorch package.
+Install PyTorch package.
+'''
+https://pytorch.org
+'''
 
-Install the stochastic package.
+Install stochastic package.
 ```
 pip install stochastic
 ```
 
-Install the fbm_dropout package.
+Install fbm_dropout package.
 ```
 pip install -e .
 ```
@@ -17,5 +20,7 @@ pip install -e .
 ## fbm_dropout package
 
 dataset.py: toy dataset and MNIST dataset
+
 fbm_dropout.py: implemntation of FBM Dropout
+
 net.py: networks used for MNIST
