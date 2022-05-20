@@ -2,10 +2,7 @@
 
 ## Setup 
 
-Install PyTorch package.
-'''
-https://pytorch.org
-'''
+Install PyTorch package: https://pytorch.org
 
 Install stochastic package.
 ```
